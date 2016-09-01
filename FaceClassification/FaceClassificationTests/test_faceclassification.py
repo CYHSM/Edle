@@ -15,6 +15,9 @@ if os.path.isfile(featuresFn) and os.path.isfile(labelsFn) and not reload:
     features = joblib.load(featuresFn)
     labels = joblib.load(labelsFn)
 else:
+    #2.) Get Features from Tensorflow
+    testImageFolder = '/home/marx/Dropbox/Privat/Programming/PrivateProj/Medium/CNNFace/faces'
+    
     # 2.) Load directly from Matlab
     baseDirParent = Path(baseDir).parent
     #testImageFolder = os.path.join(str(baseDirParent), 'FaceDetectionTests/testImages')
