@@ -15,9 +15,9 @@ def capture_frame_from_camera():
     fps = FPS().start()
 
     #2.) Start thread for image processing
-    fc.load_inception_graph()
-    clf = fc.load_best_classifier()
-    frame = []
+#    fc.load_inception_graph()
+#    clf = fc.load_best_classifier()
+#    frame = []
     #
     #ip = Thread(target=fc.classify_new_image,args=(frame,clf))
     

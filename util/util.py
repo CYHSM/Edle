@@ -2,6 +2,9 @@
 
 import tensorflow as tf
 import random
+import os.path
+from pathlib import Path
+base_dir = os.path.dirname(__file__)
 
 def _find_image_files(data_dir, labels_file):
   """Build a list of all images files and labels in the data set.
@@ -65,3 +68,24 @@ def _find_image_files(data_dir, labels_file):
   print('Found %d JPEG files across %d labels inside %s.' %
         (len(filenames), len(unique_labels), data_dir))
   return filenames, texts, labels, unique_labels
+  
+def get_unique_labels(labels_file):
+    unique_labels = [l.strip() for l in tf.gfile.FastGFile(
+    labels_file, 'r').readlines()]
+                     
+    return unique_labels
+    
+def get_absolute_paths():
+    # 1.) Define Paths
+    BASE_DIR = str(Path(base_dir).parent)
+    DATA_DIR = os.path.join(BASE_DIR,'data')
+    CLASSIFIER_DIR = os.path.join(DATA_DIR,'classifier/clf.pkl')
+    INCEPTION_MODEL_DIR = os.path.join(DATA_DIR,'inceptionmodel','classify_image_graph_def.pb')
+    FULL_IMAGES_DIR = os.path.join(DATA_DIR,'images/full')
+    FULL_IMAGES_LABELS_DIR = os.path.join(FULL_IMAGES_DIR,'labels')
+    FACE_DETECTED_IMAGES_DIR = os.path.join(DATA_DIR,'images/facedetected')
+    FACE_DETECTED_IMAGES_LABELS_DIR = os.path.join(FACE_DETECTED_IMAGES_DIR,'labels')
+    #------------------------------(.1)
+    
+    # 2.) Return
+    return DATA_DIR,CLASSIFIER_DIR,INCEPTION_MODEL_DIR,FULL_IMAGES_DIR,FULL_IMAGES_LABELS_DIR,FACE_DETECTED_IMAGES_DIR,FACE_DETECTED_IMAGES_LABELS_DIR

@@ -5,26 +5,24 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.grid_search import GridSearchCV
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
+import datetime
 import numpy as np
 import os.path
 import tensorflow as tf
 import glob
+import cv2
 from time import time
 from sklearn.externals import joblib
 from pathlib import Path
-
-base_dir = os.path.dirname(__file__)
-classifier_path = os.path.join(base_dir,'ClassifierData/clf.pkl')
+#My Modules
+from Edle.facedetection import facedetection as fd
 
 ##########################################################
 #######Get Features from Inception model with TF##########
 ##########################################################
-def load_inception_graph():
-    # Define Model Path
-    MODEL_PATH = '/home/marx/Documents/GitHubProjects/Edle/faceclassification/InceptionModel'
-     
+def load_inception_graph(MODEL_PATH):     
     #1.) Create inception graph from .pb file
-    inception_path = os.path.join(MODEL_PATH,'classify_image_graph_def.pb')
+    inception_path = MODEL_PATH
     with tf.gfile.FastGFile(inception_path,'rb') as f:
         graph_def = tf.GraphDef()
         graph_def.ParseFromString(f.read())
@@ -46,12 +44,15 @@ def get_feature_vector(image):
             next_to_last_tensor = sess.graph.get_tensor_by_name(tensor_name)
             
             #Check if image from folder or as numpy array
+            time_bf = datetime.datetime.now()
             if isinstance(image_data,np.ndarray):
                 next_to_last_feature_vector = sess.run(next_to_last_tensor,
                                {'DecodeJpeg:0': image_data})
             else:
                 next_to_last_feature_vector = sess.run(next_to_last_tensor,
                                {'DecodeJpeg/contents:0': image_data})
+            time_af = datetime.datetime.now()
+            print('Ran in ',(time_af-time_bf).total_seconds(),' seconds')
             next_to_last_feature_vector = np.squeeze(next_to_last_feature_vector)
             #print(next_to_last_feature_vector)
             return next_to_last_feature_vector
@@ -90,7 +91,7 @@ def get_feature_vector(image):
 ##########################################################
 ##############Classification of Features##################
 ##########################################################
-def get_best_classifier(features, labels, unique_labels=[], save=True):
+def get_best_classifier(features, labels, unique_labels=[], save=True, classifier_path=[]):
     """Classify the features from the pretrained vgg dnn model"""
 
     # 1.) Standardize
@@ -98,9 +99,8 @@ def get_best_classifier(features, labels, unique_labels=[], save=True):
                 
     # 2.) Perform Grid Search         
     t0 = time()
-    param_grid = {'C': [1e3, 5e3, 1e4, 5e4, 1e5],
-      'gamma': [0.0001, 0.0005, 0.001, 0.005, 0.01, 0.1], }
-    clf = GridSearchCV(svm.SVC(kernel='rbf', class_weight='balanced',probability=True), param_grid)
+    param_grid = {'C': [1e-1, 1, 1e1, 1e2, 1e3, 5e3, 1e4, 5e4, 1e5] }
+    clf = GridSearchCV(svm.SVC(kernel='linear',probability=True), param_grid)
     clf = clf.fit(features, labels)
     print("done in %0.3fs" % (time() - t0))
     print("Best estimator found by grid search:")
@@ -119,18 +119,19 @@ def get_best_classifier(features, labels, unique_labels=[], save=True):
     
     #3.) Save Classifier
     #print(base_dir)
-    joblib.dump(clf_best, classifier_path)
+    if save:
+        joblib.dump(clf_best, classifier_path)
     
     # 4.) Return classifier scores
     return clf_best, clf
 
-def load_best_classifier():
+def load_best_classifier(classifier_path):
     #1.) Load Classifier
     clf = joblib.load(classifier_path)
     #2.) Return Classifier
     return clf
     
-def classify_new_image(image,clf, unique_labels = []):
+def classify_new_image(image, clf, unique_labels = []):
     """Classifies a new image
     
     Args: 
@@ -140,10 +141,19 @@ def classify_new_image(image,clf, unique_labels = []):
         Classification result for this image
     """
 
-    #1.) Get feature vector / Can return a 2d array if image is folder with images
-    features = get_feature_vector(image)
+    #1.) Detect Face
+    cropped_image,dets,scores,idx = fd.detect_face_dlib(image)
     
-    #2.) Predict on new features
+    if cropped_image is None:
+        print('Found no Face')
+        return None,None,None
+    else:
+        print('Found a Face')
+    
+    #2.) Get feature vector / Can return a 2d array if image is folder with images
+    features = get_feature_vector(cropped_image)
+    
+    #3.) Predict on new features
     y_pred = clf.predict_proba(features.reshape(1,-1))
     y_pred_index = np.argmax(y_pred)
     
