@@ -9,7 +9,7 @@ import time
 import sys
 
 
-def detectFaceCascade(inputImgPath,showit):
+def detect_face_cascade(inputImgPath,showit):
     """Detects the face in a picture with help of haarcascades
 
     See also:
@@ -51,25 +51,46 @@ def detectFaceCascade(inputImgPath,showit):
     return faces
 
 
-def detectFaceDlib(inputImgPath,showit):
+def detect_face_dlib(image):
+    """Detects Faces with dlib library
+    
+    Args:
+        image: path or numpy array
+    
+    Returns:
+        image and scores
+    
+    """
     # 1.) Get dlib Detector and read image
     detector = dlib.get_frontal_face_detector()
-    img = cv2.imread(inputImgPath)
-    img = cv2.resize(img, (0,0), fx=0.3, fy=0.3)
+    if isinstance(image,np.ndarray):
+        img = image
+    else:
+        img = cv2.imread(image) 
+    #img = cv2.resize(img, (0,0), fx=0.3, fy=0.3)
 
     # 2.) Get Faces
     dets, scores, idx = detector.run(img)
+    if not dets: #if no face is found
+        return None,None,None,None
 
-    #3.) Show
-    for i, d in enumerate(dets):
-        print("Detection {}, score: {}, face_type:{}".format(
-            d, scores[i], idx[i]))
-        l,t,r,b = d.left(),d.top(),d.right(),d.bottom()
-        cv2.rectangle(img, (l, b), (r,t), (0, 255, 0), 2)
+    # 3.) Return only highest scores // should be only one face
+    max_score_idx = int(np.argmax(scores))
+    d_max = dets[max_score_idx]
+    l,t,r,b = d_max.left(),d_max.top(),d_max.right(),d_max.bottom()
+    
+    cropped_image = np.ascontiguousarray(img[t:b,l:r])
 
-    if showit:
-        cv2.namedWindow('img2', cv2.WINDOW_KEEPRATIO)
-        cv2.imshow('img2', img)
-        cv2.waitKey(0)
+    return cropped_image,dets[max_score_idx],scores[max_score_idx],idx[max_score_idx]
 
-    return dets,scores,idx
+    #    #3.) Show
+#    for i, d in enumerate(dets):
+#        print("Detection {}, score: {}, face_type:{}".format(
+#            d, scores[i], idx[i]))
+#        l,t,r,b = d.left(),d.top(),d.right(),d.bottom()
+#        cv2.rectangle(img, (l, b), (r,t), (0, 255, 0), 2)
+#
+#    if showit:
+#        cv2.namedWindow('img2', cv2.WINDOW_KEEPRATIO)
+#        cv2.imshow('img2', img)
+#        cv2.waitKey(0)

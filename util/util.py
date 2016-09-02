@@ -3,7 +3,6 @@
 import tensorflow as tf
 import random
 
-
 def _find_image_files(data_dir, labels_file):
   """Build a list of all images files and labels in the data set.
   Args:
