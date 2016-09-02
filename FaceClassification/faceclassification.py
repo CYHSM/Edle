@@ -10,15 +10,18 @@ import os.path
 import tensorflow as tf
 import glob
 from time import time
+from sklearn.externals import joblib
+from pathlib import Path
 
+base_dir = os.path.dirname(__file__)
 ##########################################################
 #######Get Features from Inception model with TF##########
 ##########################################################
-def get_feature_vector(image_path):
+def get_feature_vector(image):
     """Gets the feature vector from the second to last layer of the inception dnn model.
     
     Args: 
-        image_path : Path to image or to a folder with images or list of image paths
+        image : Path to image or to a folder with images or list of image paths or numpy image
     
     Returns:
         Feature Vector for this image
@@ -37,7 +40,13 @@ def get_feature_vector(image_path):
         #3.) Run session and get feature
         with tf.Session() as sess:
             next_to_last_tensor = sess.graph.get_tensor_by_name(tensor_name)
-            next_to_last_feature_vector = sess.run(next_to_last_tensor,
+            
+            #Check if image from folder or as numpy array
+            if isinstance(image_data,np.ndarray):
+                next_to_last_feature_vector = sess.run(next_to_last_tensor,
+                               {'DecodeJpeg:0': image_data})
+            else:
+                next_to_last_feature_vector = sess.run(next_to_last_tensor,
                                {'DecodeJpeg/contents:0': image_data})
             next_to_last_feature_vector = np.squeeze(next_to_last_feature_vector)
             print(next_to_last_feature_vector)
@@ -46,25 +55,27 @@ def get_feature_vector(image_path):
     #2.) Get Data from image or folder
     next_to_last_feature_vector = []
     #If List
-    if isinstance(image_path,list):        
-        for p in image_path:
+    if isinstance(image,list):        
+        for p in image:
             image_data = tf.gfile.FastGFile(p, 'rb').read()
             this_feature_vector = return_feature_from_session('pool_3:0',image_data)
             next_to_last_feature_vector.append(this_feature_vector)
         next_to_last_feature_vector = np.vstack(next_to_last_feature_vector)
     #If Path
-    elif os.path.isfile(image_path):
-        image_data = tf.gfile.FastGFile(image_path, 'rb').read()
+    elif os.path.isfile(image):
+        image_data = tf.gfile.FastGFile(image, 'rb').read()
         next_to_last_feature_vector = return_feature_from_session('pool_3:0',image_data)
     #If Folder
-    elif os.path.isdir(image_path):
-        for p in glob.glob(image_path+'/*.jpg'):
+    elif os.path.isdir(image):
+        for p in glob.glob(image+'/*.jpg'):
             image_data = tf.gfile.FastGFile(p, 'rb').read()
             this_feature_vector = return_feature_from_session('pool_3:0',image_data)
             next_to_last_feature_vector.append(this_feature_vector)
         next_to_last_feature_vector = np.vstack(next_to_last_feature_vector)
+    elif isinstance(image,np.ndarray):
+        next_to_last_feature_vector = return_feature_from_session('pool_3:0',image)
     else:
-        tf.logging.fatal('File does not exist %s', image_path)    
+        tf.logging.fatal('File does not exist %s', image)    
             
         
     #4.) Return features
@@ -75,7 +86,7 @@ def get_feature_vector(image_path):
 ##########################################################
 ##############Classification of Features##################
 ##########################################################
-def classify_features(features, labels, unique_labels=[]):
+def get_best_classifier(features, labels, unique_labels=[], save=True):
     """Classify the features from the pretrained vgg dnn model"""
 
     # 1.) Standardize
@@ -89,10 +100,12 @@ def classify_features(features, labels, unique_labels=[]):
     clf = clf.fit(features, labels)
     print("done in %0.3fs" % (time() - t0))
     print("Best estimator found by grid search:")
-    print(clf.best_estimator_)
+    clf_best = clf.best_estimator_
+    print(clf_best)
+    
     #print(clf.predict_proba(features))
 
-    y_pred = clf.predict(features)
+    y_pred = clf_best.predict(features)
     y_test = labels
     if not unique_labels:
        unique_labels = range(np.max(labels))
@@ -100,8 +113,17 @@ def classify_features(features, labels, unique_labels=[]):
     print(classification_report(y_test, y_pred, target_names=unique_labels))
     print(confusion_matrix(y_test, y_pred, labels=range(len(unique_labels)+1)))
     
+    #3.) Save Classifier
+    print(base_dir)
+    classifier_path = os.path.join(base_dir,'ClassifierData/clf.pkl')
+    joblib.dump(clf_best, classifier_path)
+    
     # 4.) Return classifier scores
-    return clf
+    return clf_best, clf
+
+    
+def classify_new_image(image_data, )
+
 
 ##########################################################
 #######Get Data from Deep Net with MATLAB API#############
