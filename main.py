@@ -10,9 +10,10 @@ from sklearn.externals import joblib
 from Edle.util import util
 from Edle.facedetection import facedetection as fd
 from Edle.faceclassification import faceclassification as fc
+from Edle.faceclassification import retrain
 
 # 1.1) Define Paths
-DATA_DIR,CLASSIFIER_DIR,INCEPTION_MODEL_DIR,FULL_IMAGES_DIR,FULL_IMAGES_LABELS_DIR,FACE_DETECTED_IMAGES_DIR,FACE_DETECTED_IMAGES_LABELS_DIR = util.get_absolute_paths() 
+DATA_DIR,CLASSIFIER_DIR,CLASSIFIER_DIR_LABELS,INCEPTION_MODEL_DIR,FULL_IMAGES_DIR,FULL_IMAGES_LABELS_DIR,FACE_DETECTED_IMAGES_DIR,FACE_DETECTED_IMAGES_LABELS_DIR = util.get_absolute_paths() 
 #------------------------------(.1.1)
 
 # 1.2) Define Variables
@@ -34,20 +35,16 @@ if use_face_detected_images:
                 print('Found face in ',fn)
             else:
                 print('Did not find face in ',fn,'...skipping!')
-    filenames, texts, labels, unique_labels = util._find_image_files(FACE_DETECTED_IMAGES_DIR,FACE_DETECTED_IMAGES_LABELS_DIR)
+    picture_folder = FACE_DETECTED_IMAGES_DIR
 
 else:
-    filenames, texts, labels, unique_labels = util._find_image_files(FULL_IMAGES_DIR,FULL_IMAGES_LABELS_DIR)
+    picture_folder = FULL_IMAGES_DIR
 #------------------------------(.2)
 
 
 # 3.) Retrain classifier with features from inception model (tensorflow)
 if retrain_classifier:
-    #Get Features
-    fc.load_inception_graph(INCEPTION_MODEL_DIR) #For better performance load beforehand
-    features = fc.get_feature_vector(filenames)
-    #Train Classifier
-    clf, _ = fc.get_best_classifier(features, labels, unique_labels=unique_labels, save=True, classifier_path=CLASSIFIER_DIR)
+    retrain.main(picture_folder, CLASSIFIER_DIR, CLASSIFIER_DIR_LABELS, steps=1000)
 else:
     clf = fc.load_best_classifier(CLASSIFIER_DIR)
 #------------------------------(.3)
