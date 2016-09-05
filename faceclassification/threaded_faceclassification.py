@@ -19,20 +19,20 @@ class ThreadedFaceClassification:
          self.inception_path = inception_path
          #Load Classifier and init graph
          self.clf = fc.load_best_classifier(classifier_path)
-         
+
 	def start(self,image):
          self.ready = False #set to false during calculation
          self.image = image
          # start the thread to classify images
          t = Thread(target=self.classify, args=())
-         t.daemon = True
+         #t.daemon = True
          t.start()
          return self
 
 	def classify(self):
          images = fc.load_vgg_graph() #For better performance load beforehand
-         y_pred_index, result_label, y_pred = fc.classify_new_image(self.image, self.clf, images,unique_labels = self.unique_labels)
-         
+         y_pred_index, result_label, y_pred = fc.classify_new_image(self.image, self.clf, unique_labels = self.unique_labels)
+
          if y_pred_index is None:
              self.sucess = False
              self.ready = True

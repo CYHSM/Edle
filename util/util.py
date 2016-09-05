@@ -6,7 +6,7 @@ import os.path
 from pathlib import Path
 base_dir = os.path.dirname(__file__)
 
-def _find_image_files(data_dir, labels_file):
+def _find_image_files(data_dir, labels_file, shuffle=True):
   """Build a list of all images files and labels in the data set.
   Args:
     data_dir: string, path to the root directory of images.
@@ -57,24 +57,25 @@ def _find_image_files(data_dir, labels_file):
   # Shuffle the ordering of all image files in order to guarantee
   # random ordering of the images with respect to label in the
   # saved TFRecord files. Make the randomization repeatable.
-  shuffled_index = list(range(len(filenames)))
-  random.seed(12345)
-  random.shuffle(shuffled_index)
+  if shuffle:
+      shuffled_index = list(range(len(filenames)))
+      random.seed(12345)
+      random.shuffle(shuffled_index)
 
-  filenames = [filenames[i] for i in shuffled_index]
-  texts = [texts[i] for i in shuffled_index]
-  labels = [labels[i] for i in shuffled_index]
+      filenames = [filenames[i] for i in shuffled_index]
+      texts = [texts[i] for i in shuffled_index]
+      labels = [labels[i] for i in shuffled_index]
 
   print('Found %d JPEG files across %d labels inside %s.' %
         (len(filenames), len(unique_labels), data_dir))
   return filenames, texts, labels, unique_labels
-  
+
 def get_unique_labels(labels_file):
     unique_labels = [l.strip() for l in tf.gfile.FastGFile(
     labels_file, 'r').readlines()]
-                     
+
     return unique_labels
-    
+
 def get_absolute_paths():
     # 1.) Define Paths
     BASE_DIR = str(Path(base_dir).parent)
@@ -87,6 +88,6 @@ def get_absolute_paths():
     FACE_DETECTED_IMAGES_DIR = os.path.join(DATA_DIR,'images/facedetected')
     FACE_DETECTED_IMAGES_LABELS_DIR = os.path.join(FACE_DETECTED_IMAGES_DIR,'labels')
     #------------------------------(.1)
-    
+
     # 2.) Return
     return DATA_DIR,CLASSIFIER_DIR,INCEPTION_MODEL_DIR,VGG_FACE_MODEL_DIR,FULL_IMAGES_DIR,FULL_IMAGES_LABELS_DIR,FACE_DETECTED_IMAGES_DIR,FACE_DETECTED_IMAGES_LABELS_DIR

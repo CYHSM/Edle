@@ -7,12 +7,13 @@ from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
 
 from skimage.transform import resize
+import skimage
 import datetime
 import numpy as np
 import os.path
 import tensorflow as tf
 import glob
-import cv2
+import matplotlib.image as mpimg
 from time import time
 from sklearn.externals import joblib
 from pathlib import Path
@@ -39,9 +40,11 @@ def load_vgg_graph(vgg_path='/home/marx/Documents/GitHubProjects/Edle/data/vggfa
 
     graph_def = tf.GraphDef()
     graph_def.ParseFromString(fileContent)
-    images = tf.placeholder("float", [None, 224, 224, 3])
-    tf.import_graph_def(graph_def, input_map={"images": images})
-    return images
+    #images = tf.placeholder("float", [35, 224, 224, 3])
+    #tf.import_graph_def(graph_def, input_map={"images": images})
+    tf.import_graph_def(graph_def)
+    #graph_def.as_default()
+    #return images
 
 
 def get_feature_vector(image, tensor_name='pool_3:0'):
@@ -114,30 +117,40 @@ def get_feature_vector_from_vgg(image_fn, vgg_path='/home/marx/Documents/GitHubP
     #    image = image.reshape((1, 224, 224, 3))
     #    content = tf.Variable(image, dtype=tf.float32)
 
-    with open(vgg_path, mode='rb') as f:
-        fileContent = f.read()
+    # with open(vgg_path, mode='rb') as f:
+    #     fileContent = f.read()
+    #
+    # graph_def = tf.GraphDef()
+    # graph_def.ParseFromString(fileContent)
 
-    graph_def = tf.GraphDef()
-    graph_def.ParseFromString(fileContent)
-    images = tf.placeholder("float", [None, 224, 224, 3])
-    tf.import_graph_def(graph_def, input_map={"images": images})
-
+    # images = tf.placeholder("float", [None, 224, 224, 3])
+    # tf.import_graph_def(graph_def, input_map={"images": images})
     graph = tf.get_default_graph()
-
     fc8 = graph.get_tensor_by_name("import/prob:0")
     fc7 = graph.get_tensor_by_name("import/Relu_1:0")
     conv5_3 = graph.get_tensor_by_name("import/conv5_3/Relu:0")
+    images = graph.get_tensor_by_name("import/images:0")
 
-    image_batch = np.empty(shape=(len(image_fn), 224, 224, 3))
-    for c, im in enumerate(image_fn):
-        if isinstance(image_fn, np.ndarray):
-            image = image_fn / 255.0
-        else:
-            image = cv2.imread(im) / 255.0
-        image = resize(image, (224, 224))
-        image = image.reshape((1, 224, 224, 3))
+    if isinstance(image_fn,np.ndarray):
+        image_r = resize(image_fn, (224, 224), preserve_range=True)
+        mean_image = [129.1863, 104.7624, 93.5940]
+        imagesub = image_r - mean_image
+        imagesub = imagesub / 255
 
-        image_batch[c, ...] = image
+        image = imagesub.reshape((1, 224, 224, 3))
+        image_batch = image
+    else:
+        image_batch = np.empty(shape=(len(image_fn), 224, 224, 3))
+        for c, im in enumerate(image_fn):
+            image = mpimg.imread(im)
+            image_r = resize(image, (224, 224), preserve_range=True)
+            mean_image = [129.1863, 104.7624, 93.5940]
+            imagesub = image_r - mean_image
+            imagesub = imagesub / 255
+
+            image = imagesub.reshape((1, 224, 224, 3))
+
+            image_batch[c, ...] = image
 
     with tf.Session() as sess:
 
@@ -158,11 +171,11 @@ def get_best_classifier(features, labels, unique_labels=[], save=True, classifie
     """Classify the features from the pretrained vgg dnn model"""
 
     # 1.) Standardize
-    features = preprocessing.scale(features.astype(float))
+    #features = preprocessing.scale(features.astype(float))
 
     # 2.) Perform Grid Search
     t0 = time()
-    param_grid = {'C': [1, 1e1]}
+    param_grid = {'C': [1e-1, 1, 1e1]}
     clf = GridSearchCV(svm.SVC(kernel='linear', probability=True), param_grid)
     clf = clf.fit(features, labels)
     print("done in %0.3fs" % (time() - t0))
@@ -196,7 +209,7 @@ def load_best_classifier(classifier_path):
     return clf
 
 
-def classify_new_image(image, clf, images, unique_labels=[]):
+def classify_new_image(image, clf, unique_labels=[]):
     """Classifies a new image
 
     Args:
@@ -217,7 +230,7 @@ def classify_new_image(image, clf, images, unique_labels=[]):
 
     # 2.) Get feature vector / Can return a 2d array if image is folder with
     # images
-    features = get_feature_vector_from_vgg(cropped_image, images)
+    features,_,_ = get_feature_vector_from_vgg(cropped_image)
 
     # 3.) Predict on new features
     y_pred = clf.predict_proba(features.reshape(1, -1))
