@@ -88,7 +88,8 @@ import struct
 FLAGS = tf.app.flags.FLAGS
 
 # Input and output file flags.
-tf.app.flags.DEFINE_string('image_dir', '',
+image_dir = '/home/marx/Pictures/ProgrammingPath/TensorflowRetrainStuff'
+tf.app.flags.DEFINE_string('image_dir', image_dir,
                            """Path to folders of labeled images.""")
 tf.app.flags.DEFINE_string('output_graph', '/tmp/output_graph.pb',
                            """Where to save the trained graph.""")
@@ -792,15 +793,7 @@ def add_evaluation_step(result_tensor, ground_truth_tensor):
   return evaluation_step
 
 
-def main(image_dir, classifier_dir, classifier_dir_labels, steps=1000):
-    
-  #Change Flags to input to this function
-  FLAGS.image_dir = image_dir
-  FLAGS.output_graph = classifier_dir
-  FLAGS.output_labels = classifier_dir_labels  
-  FLAGS.how_many_training_steps = steps
-  
-    
+def main(_):
   # Setup the directory we'll write summaries to for TensorBoard
   if tf.gfile.Exists(FLAGS.summaries_dir):
     tf.gfile.DeleteRecursively(FLAGS.summaries_dir)
@@ -925,3 +918,7 @@ def main(image_dir, classifier_dir, classifier_dir_labels, steps=1000):
     f.write(output_graph_def.SerializeToString())
   with gfile.FastGFile(FLAGS.output_labels, 'w') as f:
     f.write('\n'.join(image_lists.keys()) + '\n')
+
+
+if __name__ == '__main__':
+  tf.app.run()

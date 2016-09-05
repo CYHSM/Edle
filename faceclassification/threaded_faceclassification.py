@@ -30,8 +30,8 @@ class ThreadedFaceClassification:
          return self
 
 	def classify(self):
-         fc.load_inception_graph(self.inception_path) #For better performance load beforehand
-         y_pred_index, result_label, y_pred = fc.classify_new_image(self.image, self.clf, unique_labels = self.unique_labels)
+         images = fc.load_vgg_graph() #For better performance load beforehand
+         y_pred_index, result_label, y_pred = fc.classify_new_image(self.image, self.clf, images,unique_labels = self.unique_labels)
          
          if y_pred_index is None:
              self.sucess = False

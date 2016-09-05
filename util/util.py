@@ -79,9 +79,9 @@ def get_absolute_paths():
     # 1.) Define Paths
     BASE_DIR = str(Path(base_dir).parent)
     DATA_DIR = os.path.join(BASE_DIR,'data')
-    CLASSIFIER_DIR = os.path.join(DATA_DIR,'classifier/output_graph.pb')
-    CLASSIFIER_DIR_LABELS = os.path.join(DATA_DIR,'classifier/output_labels.txt')
+    CLASSIFIER_DIR = os.path.join(DATA_DIR,'classifier/clf.pkl')
     INCEPTION_MODEL_DIR = os.path.join(DATA_DIR,'inceptionmodel','classify_image_graph_def.pb')
+    VGG_FACE_MODEL_DIR = os.path.join(DATA_DIR,'vggfacemodel','vggface16.tfmodel')
     FULL_IMAGES_DIR = os.path.join(DATA_DIR,'images/full')
     FULL_IMAGES_LABELS_DIR = os.path.join(FULL_IMAGES_DIR,'labels')
     FACE_DETECTED_IMAGES_DIR = os.path.join(DATA_DIR,'images/facedetected')
@@ -89,4 +89,4 @@ def get_absolute_paths():
     #------------------------------(.1)
     
     # 2.) Return
-    return DATA_DIR,CLASSIFIER_DIR,CLASSIFIER_DIR_LABELS,INCEPTION_MODEL_DIR,FULL_IMAGES_DIR,FULL_IMAGES_LABELS_DIR,FACE_DETECTED_IMAGES_DIR,FACE_DETECTED_IMAGES_LABELS_DIR
+    return DATA_DIR,CLASSIFIER_DIR,INCEPTION_MODEL_DIR,VGG_FACE_MODEL_DIR,FULL_IMAGES_DIR,FULL_IMAGES_LABELS_DIR,FACE_DETECTED_IMAGES_DIR,FACE_DETECTED_IMAGES_LABELS_DIR

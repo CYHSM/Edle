@@ -9,7 +9,7 @@ from Edle.faceclassification.threaded_faceclassification import ThreadedFaceClas
 
 
 # 1.1) Define Paths and get unique labels
-DATA_DIR,CLASSIFIER_DIR,INCEPTION_MODEL_DIR,FULL_IMAGES_DIR,FULL_IMAGES_LABELS_DIR,FACE_DETECTED_IMAGES_DIR,FACE_DETECTED_IMAGES_LABELS_DIR = util.get_absolute_paths() 
+DATA_DIR,CLASSIFIER_DIR,INCEPTION_MODEL_DIR,VGG_FACE_MODEL_DIR,FULL_IMAGES_DIR,FULL_IMAGES_LABELS_DIR,FACE_DETECTED_IMAGES_DIR,FACE_DETECTED_IMAGES_LABELS_DIR = util.get_absolute_paths() 
 unique_labels = util.get_unique_labels(FACE_DETECTED_IMAGES_LABELS_DIR)
 #------------------------------(.1.1)
 
