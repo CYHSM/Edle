@@ -32,14 +32,14 @@ clf = fc.load_best_classifier(CLASSIFIER_DIR)
 fc.load_vgg_graph() #For better performance load beforehand
 
 # 2.) Start loop and continously acquire frames which are then processed by the thread
-while fps._numFrames < 5000:
+while fps._numFrames < 50000:
     # grab the frame from the threaded video stream
     frame_cv2 = vs.read()
     frame = cv2.cvtColor(frame_cv2, cv2.COLOR_BGR2RGB)
     #features = fc.get_feature_vector_from_vgg(cropped_image)
     #frame = cv2.resize(frame, (299, 299))
     #Classify
-    if tfc.ready:
+    if tfc.ready and not fps._numFrames % 1000:
         tfc.start(frame)
         print(tfc.result)
         print(tfc.result_proba)
